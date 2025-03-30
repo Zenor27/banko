@@ -29,7 +29,9 @@ def get_transactions() -> list[Transaction]:
     transactions = list[Transaction]()
     csv_files_path = os.path.join(os.path.dirname(__file__), "csv")
     for filename in os.listdir(csv_files_path):
-        with open(os.path.join(csv_files_path, filename), "r") as file:
+        with open(
+            os.path.join(csv_files_path, filename), "r", encoding="ISO-8859-1"
+        ) as file:
             reader = csv.DictReader(file, delimiter=";")
             for row in reader:
                 transactions.append(
