@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { ValidDateRange } from "@/lib/utils";
 import {
   endOfMonth,
   endOfYear,
@@ -8,10 +9,9 @@ import {
   startOfYear,
   subMonths,
 } from "date-fns";
-import { DateRange } from "react-day-picker";
 
 type PredefinedDateRangesProps = {
-  onDateRangeChange: (dateRange: DateRange) => void;
+  onDateRangeChange: (dateRange: ValidDateRange) => void;
 };
 
 export const PredefinedDateRanges = ({

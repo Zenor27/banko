@@ -46,6 +46,23 @@ export type GetFinancialSummaryResponse = {
     balance: number;
 };
 
+export type GetTransactionResponse = {
+    at: string;
+    name: string;
+    category: string;
+    amount: number;
+};
+
+export type GetTransactionsRequest = {
+    startDate: string;
+    endDate: string;
+    transactionType: 'income' | 'expense' | 'all';
+};
+
+export type GetTransactionsResponse = {
+    transactions: Array<GetTransactionResponse>;
+};
+
 export type HttpValidationError = {
     detail?: Array<ValidationError>;
 };
@@ -130,6 +147,31 @@ export type GetByCategoriesByCategoriesPostResponses = {
 };
 
 export type GetByCategoriesByCategoriesPostResponse = GetByCategoriesByCategoriesPostResponses[keyof GetByCategoriesByCategoriesPostResponses];
+
+export type GetTransactionsTransactionsPostData = {
+    body: GetTransactionsRequest;
+    path?: never;
+    query?: never;
+    url: '/transactions';
+};
+
+export type GetTransactionsTransactionsPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetTransactionsTransactionsPostError = GetTransactionsTransactionsPostErrors[keyof GetTransactionsTransactionsPostErrors];
+
+export type GetTransactionsTransactionsPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: GetTransactionsResponse;
+};
+
+export type GetTransactionsTransactionsPostResponse = GetTransactionsTransactionsPostResponses[keyof GetTransactionsTransactionsPostResponses];
 
 export type ClientOptions = {
     baseUrl: 'http://127.0.0.1:8000' | (string & {});

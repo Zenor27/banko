@@ -2,14 +2,12 @@
 
 import { DateRangePicker } from "@/components/date-range-picker";
 import { PredefinedDateRanges } from "@/components/predefined-date-ranges";
-import { Categories } from "@/features/dashboard/categories";
-import { FinancialChart } from "@/features/dashboard/financial-chart";
-import { Summary } from "@/features/dashboard/summary";
+import { TransactionsTable } from "@/features/transactions/transactions-table";
 import { ValidDateRange } from "@/lib/utils";
-import { endOfMonth, startOfMonth } from "date-fns";
+import { startOfMonth, endOfMonth } from "date-fns";
 import { useState } from "react";
 
-export const DashboardView = () => {
+export const TransactionsView = () => {
   const [dateRange, setDateRange] = useState<ValidDateRange>({
     from: startOfMonth(new Date()),
     to: endOfMonth(new Date()),
@@ -17,7 +15,7 @@ export const DashboardView = () => {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+      <h1 className="text-3xl font-bold tracking-tight">Transactions</h1>
       <div className="flex gap-4">
         <PredefinedDateRanges onDateRangeChange={setDateRange} />
         <DateRangePicker
@@ -25,10 +23,7 @@ export const DashboardView = () => {
           onDateRangeChange={setDateRange}
         />
       </div>
-      <FinancialChart dateRange={dateRange} />
-      <Summary dateRange={dateRange} />
-      <h2 className="text-xl font-bold tracking-tight">Categories</h2>
-      <Categories dateRange={dateRange} />
+      <TransactionsTable dateRange={dateRange} />
     </div>
   );
 };

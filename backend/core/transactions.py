@@ -1,9 +1,10 @@
+from collections.abc import Iterable
 from dataclasses import dataclass
 import pandas as pd
 from datetime import date, datetime
 from typing import Literal
 
-from data.transactions import get_transactions
+from data.transactions import Transaction, get_transactions
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -99,3 +100,10 @@ def get_finance_by_category(*, start_date: date, end_date: date) -> dict[str, Fi
         )
 
     return finance_by_category
+
+
+def get_filtered_transactions(
+    *, start_date: date, end_date: date
+) -> Iterable[Transaction]:
+    transactions = get_transactions()
+    yield from (t for t in transactions if start_date <= t.at <= end_date)

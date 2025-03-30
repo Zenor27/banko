@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from datetime import date
 from typing import Literal
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,11 +7,13 @@ from fastapi import FastAPI
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 
+from data.transactions import Transaction
 from core.transactions import (
     Finance,
     get_finance,
     get_finance_by_category,
     get_finance_by_period,
+    get_filtered_transactions,
 )
 
 
@@ -160,3 +163,48 @@ async def get_by_categories(request: GetByCategoriesRequest) -> GetByCategoriesR
             start_date=request.start_date, end_date=request.end_date
         )
     )
+
+
+class GetTransactionsRequest(BaseAPIModel):
+    start_date: date
+    end_date: date
+    transaction_type: Literal["income", "expense", "all"]
+
+
+class GetTransactionResponse(BaseAPIModel):
+    at: date
+    name: str
+    category: str
+    amount: float
+
+    @classmethod
+    def from_data(cls, transaction: Transaction) -> "GetTransactionResponse":
+        return cls(
+            at=transaction.at,
+            name=transaction.name,
+            category=transaction.category,
+            amount=transaction.amount,
+        )
+
+
+class GetTransactionsResponse(BaseAPIModel):
+    transactions: list[GetTransactionResponse]
+
+    @classmethod
+    def from_data(
+        cls, transactions: Iterable[Transaction]
+    ) -> "GetTransactionsResponse":
+        return cls(
+            transactions=[
+                GetTransactionResponse.from_data(transaction)
+                for transaction in transactions
+            ]
+        )
+
+
+@app.post("/transactions")
+async def get_transactions(request: GetTransactionsRequest) -> GetTransactionsResponse:
+    transactions = get_filtered_transactions(
+        start_date=request.start_date, end_date=request.end_date
+    )
+    return GetTransactionsResponse.from_data(transactions)
