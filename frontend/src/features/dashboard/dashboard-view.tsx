@@ -33,7 +33,8 @@ export const DashboardView = () => {
       </div>
       <FinancialChart dateRange={dateRange} />
       <Summary dateRange={dateRange} />
-      <Categories />
+      <h2 className="text-xl font-bold tracking-tight">Categories</h2>
+      <Categories dateRange={dateRange} />
     </div>
   );
 };

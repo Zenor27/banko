@@ -74,3 +74,29 @@ def get_finance(*, start_date: date, end_date: date) -> Finance:
     expense = abs(df[df["amount"] < 0]["amount"].sum())
 
     return Finance(income=income, expense=expense)
+
+
+def get_finance_by_category(*, start_date: date, end_date: date) -> dict[str, Finance]:
+    transactions = get_transactions()
+    start_date_time, end_date_time = (
+        datetime.combine(start_date, datetime.min.time()),
+        datetime.combine(end_date, datetime.max.time()),
+    )
+
+    df = pd.DataFrame(transactions)
+    df["at"] = pd.to_datetime(df["at"])
+    df = df[(df["at"] >= start_date_time) & (df["at"] <= end_date_time)]
+    df["category"] = df["category"].str.lower()
+
+    df = df.groupby("category").agg(
+        income=("amount", lambda x: x[df["amount"] > 0].sum()),
+        expense=("amount", lambda x: x[df["amount"] < 0].sum()),
+    )
+    finance_by_category = dict[str, Finance]()
+    for category, row in df.iterrows():
+        finance_by_category[category] = Finance(
+            income=abs(row["income"]),
+            expense=abs(row["expense"]),
+        )
+
+    return finance_by_category

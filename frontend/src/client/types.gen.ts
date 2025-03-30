@@ -5,6 +5,24 @@ export type FinanceResponse = {
     expense: number;
 };
 
+export type GetByCategoriesFinanceResponse = {
+    income: number;
+    expense: number;
+    percentageOfTotalIncome: number;
+    percentageOfTotalExpense: number;
+};
+
+export type GetByCategoriesRequest = {
+    startDate: string;
+    endDate: string;
+};
+
+export type GetByCategoriesResponse = {
+    financeByCategory: {
+        [key: string]: GetByCategoriesFinanceResponse;
+    };
+};
+
 export type GetFinancialChartRequest = {
     startDate: string;
     endDate: string;
@@ -87,6 +105,31 @@ export type GetSummarySummaryPostResponses = {
 };
 
 export type GetSummarySummaryPostResponse = GetSummarySummaryPostResponses[keyof GetSummarySummaryPostResponses];
+
+export type GetByCategoriesByCategoriesPostData = {
+    body: GetByCategoriesRequest;
+    path?: never;
+    query?: never;
+    url: '/by_categories';
+};
+
+export type GetByCategoriesByCategoriesPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetByCategoriesByCategoriesPostError = GetByCategoriesByCategoriesPostErrors[keyof GetByCategoriesByCategoriesPostErrors];
+
+export type GetByCategoriesByCategoriesPostResponses = {
+    /**
+     * Successful Response
+     */
+    200: GetByCategoriesResponse;
+};
+
+export type GetByCategoriesByCategoriesPostResponse = GetByCategoriesByCategoriesPostResponses[keyof GetByCategoriesByCategoriesPostResponses];
 
 export type ClientOptions = {
     baseUrl: 'http://127.0.0.1:8000' | (string & {});

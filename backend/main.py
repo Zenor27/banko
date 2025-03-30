@@ -6,7 +6,12 @@ from fastapi import FastAPI
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 
-from core.transactions import Finance, get_finance, get_finance_by_period
+from core.transactions import (
+    Finance,
+    get_finance,
+    get_finance_by_category,
+    get_finance_by_period,
+)
 
 
 app = FastAPI()
@@ -94,5 +99,64 @@ async def get_summary(
         get_finance(
             start_date=request.start_date,
             end_date=request.end_date,
+        )
+    )
+
+
+class GetByCategoriesRequest(BaseAPIModel):
+    start_date: date
+    end_date: date
+
+
+class GetByCategoriesFinanceResponse(BaseAPIModel):
+    income: float
+    expense: float
+
+    percentage_of_total_income: float
+    percentage_of_total_expense: float
+
+    @classmethod
+    def from_core(
+        cls, finance: Finance, total_income: float, total_expense: float
+    ) -> "GetByCategoriesFinanceResponse":
+        return cls(
+            income=finance.income,
+            expense=finance.expense,
+            percentage_of_total_income=(
+                finance.income / total_income if total_income else 0
+            ),
+            percentage_of_total_expense=(
+                finance.expense / total_expense if total_expense else 0
+            ),
+        )
+
+
+class GetByCategoriesResponse(BaseAPIModel):
+    finance_by_category: dict[str, GetByCategoriesFinanceResponse]
+
+    @classmethod
+    def from_core(
+        cls, finance_by_category: dict[str, Finance]
+    ) -> "GetByCategoriesResponse":
+        total_income = sum(finance.income for finance in finance_by_category.values())
+        total_expense = sum(finance.expense for finance in finance_by_category.values())
+
+        return cls(
+            finance_by_category={
+                category: GetByCategoriesFinanceResponse.from_core(
+                    finance=finance,
+                    total_income=total_income,
+                    total_expense=total_expense,
+                )
+                for category, finance in finance_by_category.items()
+            }
+        )
+
+
+@app.post("/by_categories")
+async def get_by_categories(request: GetByCategoriesRequest) -> GetByCategoriesResponse:
+    return GetByCategoriesResponse.from_core(
+        finance_by_category=get_finance_by_category(
+            start_date=request.start_date, end_date=request.end_date
         )
     )
