@@ -5,12 +5,12 @@ import { PredefinedDateRanges } from "@/components/predefined-date-ranges";
 import { Categories } from "@/features/dashboard/categories";
 import { FinancialChart } from "@/features/dashboard/financial-chart";
 import { Summary } from "@/features/dashboard/summary";
+import { isValidDateRange, ValidDateRange } from "@/lib/utils";
 import { endOfMonth, startOfMonth } from "date-fns";
 import { useState } from "react";
-import { DateRange } from "react-day-picker";
 
 export const DashboardView = () => {
-  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+  const [dateRange, setDateRange] = useState<ValidDateRange>({
     from: startOfMonth(new Date()),
     to: endOfMonth(new Date()),
   });
@@ -19,14 +19,20 @@ export const DashboardView = () => {
     <div className="flex flex-col gap-4">
       <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
       <div className="flex gap-4">
-        <PredefinedDateRanges onDateRangeChange={setDateRange} />
+        <PredefinedDateRanges
+          onDateRangeChange={(value) =>
+            isValidDateRange(value) && setDateRange(value)
+          }
+        />
         <DateRangePicker
           dateRange={dateRange}
-          onDateRangeChange={setDateRange}
+          onDateRangeChange={(value) =>
+            value && isValidDateRange(value) && setDateRange(value)
+          }
         />
       </div>
-      <FinancialChart />
-      <Summary />
+      <FinancialChart dateRange={dateRange} />
+      <Summary dateRange={dateRange} />
       <Categories />
     </div>
   );
