@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-import math
 import pandas as pd
 from datetime import date, datetime
 from typing import Literal
@@ -94,7 +93,7 @@ def get_finance_by_category(*, start_date: date, end_date: date) -> dict[str, Fi
     )
     finance_by_category = dict[str, Finance]()
     for category, row in df.iterrows():
-        finance_by_category[category] = Finance(
+        finance_by_category[str(category)] = Finance(
             income=abs(row["income"]),
             expense=abs(row["expense"]),
         )

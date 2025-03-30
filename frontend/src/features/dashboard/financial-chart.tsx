@@ -18,7 +18,6 @@ import { GroupBy } from "@/features/dashboard/types";
 import { ValidDateRange } from "@/lib/utils";
 import { BarChart3, LineChartIcon, PieChartIcon } from "lucide-react";
 import { useState } from "react";
-import { DateRange } from "react-day-picker";
 import {
   Bar,
   BarChart,
