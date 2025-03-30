@@ -20,6 +20,11 @@ class Transaction:
         return self.amount < 0
 
 
+def _remove_duplicates(transactions: list[Transaction]) -> list[Transaction]:
+    # Temporary solutions to avoid using a database and bulk import CSV files
+    return list(set(transactions))
+
+
 def get_transactions() -> list[Transaction]:
     transactions = list[Transaction]()
     csv_files_path = os.path.join(os.path.dirname(__file__), "csv")
@@ -38,4 +43,4 @@ def get_transactions() -> list[Transaction]:
                     )
                 )
 
-    return transactions
+    return _remove_duplicates(transactions)
