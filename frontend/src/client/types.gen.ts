@@ -23,6 +23,12 @@ export type GetByCategoriesResponse = {
     };
 };
 
+export type GetCurrencyResponse = {
+    currencyLabel: string;
+    currencySymbol: string;
+    currencyCode: string;
+};
+
 export type GetFinancialChartRequest = {
     startDate: string;
     endDate: string;
@@ -172,6 +178,22 @@ export type GetTransactionsTransactionsPostResponses = {
 };
 
 export type GetTransactionsTransactionsPostResponse = GetTransactionsTransactionsPostResponses[keyof GetTransactionsTransactionsPostResponses];
+
+export type GetCurrencyCurrencyGetData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/currency';
+};
+
+export type GetCurrencyCurrencyGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: GetCurrencyResponse;
+};
+
+export type GetCurrencyCurrencyGetResponse = GetCurrencyCurrencyGetResponses[keyof GetCurrencyCurrencyGetResponses];
 
 export type ClientOptions = {
     baseUrl: 'http://127.0.0.1:8000' | (string & {});

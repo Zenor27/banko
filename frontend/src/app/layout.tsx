@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Shell } from "@/components/shell";
 import { Providers } from "@/app/providers";
+import { getCurrencyCurrencyGet } from "@/client";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,17 +20,23 @@ export const metadata: Metadata = {
   description: "Personal finance management made easy",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const currency = await getCurrencyCurrencyGet();
+  // TODO: global nextjs error handling
+  if (!currency.data) {
+    throw new Error("Failed to fetch currency data");
+  }
+
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Providers>
+        <Providers currency={currency.data}>
           <Shell>{children}</Shell>
         </Providers>
       </body>

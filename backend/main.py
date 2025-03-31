@@ -208,3 +208,16 @@ async def get_transactions(request: GetTransactionsRequest) -> GetTransactionsRe
         start_date=request.start_date, end_date=request.end_date
     )
     return GetTransactionsResponse.from_data(transactions)
+
+
+class GetCurrencyResponse(BaseAPIModel):
+    currency_label: str
+    currency_symbol: str
+    currency_code: str
+
+
+@app.get("/currency")
+async def get_currency() -> GetCurrencyResponse:
+    return GetCurrencyResponse(
+        currency_label="euro", currency_symbol="€", currency_code="EUR"
+    )

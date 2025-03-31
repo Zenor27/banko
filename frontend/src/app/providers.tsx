@@ -2,11 +2,21 @@
 
 import { PropsWithChildren } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { CurrencyContext, CurrencyProvider } from "@/lib/use-currency";
 
 const queryClient = new QueryClient();
 
-export const Providers = ({ children }: PropsWithChildren) => {
+type ProvidersProps = {
+  currency: CurrencyContext;
+};
+
+export const Providers = ({
+  children,
+  currency,
+}: PropsWithChildren<ProvidersProps>) => {
   return (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <CurrencyProvider currency={currency}>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    </CurrencyProvider>
   );
 };

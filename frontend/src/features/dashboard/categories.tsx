@@ -5,6 +5,7 @@ import {
   FinanceByCategoryData,
   useFinanceByCategory,
 } from "@/features/dashboard/hooks/use-finance-by-category";
+import { useAmountFormatter } from "@/lib/use-currency";
 import { cn, ValidDateRange } from "@/lib/utils";
 
 type CategoriesProps = {
@@ -40,6 +41,8 @@ const CategoriesCard = ({
 }: {
   financeByCategory: FinanceByCategoryData;
 }) => {
+  const { amountFormatter } = useAmountFormatter();
+
   if (Object.keys(financeByCategory).length === 0) {
     return (
       <div className="grid justify-center" style={{ gridColumn: "1 / -1" }}>
@@ -72,12 +75,12 @@ const CategoriesCard = ({
                 <div className="flex flex-col items-end">
                   {finance.income !== 0 && (
                     <span className="text-emerald-600">
-                      ${Math.abs(finance.income).toLocaleString()}
+                      {amountFormatter(finance.income)}
                     </span>
                   )}
                   {finance.expense !== 0 && (
                     <span className="text-rose-600">
-                      -${Math.abs(finance.expense).toLocaleString()}
+                      -{amountFormatter(finance.expense)}
                     </span>
                   )}
                 </div>

@@ -106,4 +106,8 @@ def get_filtered_transactions(
     *, start_date: date, end_date: date
 ) -> Iterable[Transaction]:
     transactions = get_transactions()
-    yield from (t for t in transactions if start_date <= t.at <= end_date)
+    yield from (
+        t
+        for t in sorted(transactions, key=lambda t: t.at, reverse=True)
+        if start_date <= t.at <= end_date
+    )

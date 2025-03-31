@@ -3,6 +3,7 @@ import { createColumnHelper } from "@tanstack/react-table";
 import { cn, toISODate, ValidDateRange } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowUp, ArrowDown } from "lucide-react";
+import { useAmountFormatter } from "@/lib/use-currency";
 
 type UseTransactionsProps = {
   dateRange: ValidDateRange;
@@ -32,6 +33,7 @@ export type TransactionsData = NonNullable<
 const columnHelper = createColumnHelper<TransactionsData[number]>();
 
 export const useTransactionsTable = () => {
+  const { amountFormatter } = useAmountFormatter();
   return [
     columnHelper.accessor("at", {
       header: "Date",
@@ -58,7 +60,7 @@ export const useTransactionsTable = () => {
             ) : (
               <ArrowDown className="h-4 w-4 text-rose-500" />
             )}
-            ${Math.abs(amount).toLocaleString()}
+            {amountFormatter(amount)}
           </div>
         );
       },

@@ -1,10 +1,12 @@
 import { Spinner } from "@/components/spinner";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { useFinancialSummary } from "@/features/dashboard/hooks/use-financial-summary";
+import { useAmountFormatter } from "@/lib/use-currency";
 import { cn, ValidDateRange } from "@/lib/utils";
 import { ArrowUp, ArrowDown, DollarSign } from "lucide-react";
 
 export const Summary = ({ dateRange }: { dateRange: ValidDateRange }) => {
+  const { amountFormatter } = useAmountFormatter();
   const { isLoading, financialSummaryData } = useFinancialSummary({
     dateRange,
   });
@@ -25,7 +27,7 @@ export const Summary = ({ dateRange }: { dateRange: ValidDateRange }) => {
           ) : (
             <>
               <div className="text-2xl font-bold text-emerald-600">
-                ${financialSummaryData?.income.toLocaleString()}
+                {amountFormatter(financialSummaryData.income)}
               </div>
               <p className="text-xs text-muted-foreground">
                 For the selected period
@@ -45,7 +47,7 @@ export const Summary = ({ dateRange }: { dateRange: ValidDateRange }) => {
           ) : (
             <>
               <div className="text-2xl font-bold text-rose-600">
-                ${financialSummaryData?.expense.toLocaleString()}
+                {amountFormatter(financialSummaryData.expense)}
               </div>
               <p className="text-xs text-muted-foreground">
                 For the selected period
@@ -67,15 +69,15 @@ export const Summary = ({ dateRange }: { dateRange: ValidDateRange }) => {
               <div
                 className={cn(
                   "text-2xl font-bold",
-                  financialSummaryData?.balance >= 0
+                  financialSummaryData.balance >= 0
                     ? "text-emerald-600"
                     : "text-rose-600"
                 )}
               >
-                ${financialSummaryData?.balance.toLocaleString()}
+                {amountFormatter(financialSummaryData.balance)}
               </div>
               <p className="text-xs text-muted-foreground">
-                {financialSummaryData?.balance >= 0 ? "Surplus" : "Deficit"} of{" "}
+                {financialSummaryData.balance >= 0 ? "Surplus" : "Deficit"} of{" "}
                 {isNaN(balancePercent) ? 0 : balancePercent.toFixed(2)}%
               </p>
             </>

@@ -15,6 +15,7 @@ import {
   useFinancialChartData,
 } from "@/features/dashboard/hooks/use-financial-chart-data";
 import { GroupBy } from "@/features/dashboard/types";
+import { useAmountFormatter } from "@/lib/use-currency";
 import { ValidDateRange } from "@/lib/utils";
 import { BarChart3, LineChartIcon, PieChartIcon } from "lucide-react";
 import { useState } from "react";
@@ -128,6 +129,7 @@ const FinancialBarChart = ({
 }: {
   financialChartData: FinancialChartData;
 }) => {
+  const { amountFormatter } = useAmountFormatter();
   const chartData = Object.entries(financialChartData.financeByPeriod).map(
     ([key, value]) => ({
       name: key,
@@ -135,6 +137,7 @@ const FinancialBarChart = ({
       expense: value.expense,
     })
   );
+
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart
@@ -149,14 +152,14 @@ const FinancialBarChart = ({
           tickMargin={10}
         />
         <YAxis
-          tickFormatter={(value) => `$${value}`}
+          tickFormatter={(value) => amountFormatter(value)}
           tickLine={false}
           axisLine={false}
           tickMargin={10}
         />
         <Tooltip
           labelFormatter={(label) => `Period: ${label}`}
-          formatter={(value, name) => [`${name}: $${Number(value).toFixed(2)}`]}
+          formatter={(value, name) => [`${name}: ${amountFormatter(+value)}`]}
           contentStyle={{
             borderRadius: "12px",
             padding: "10px",
@@ -187,6 +190,7 @@ const FinancialLineChart = ({
 }: {
   financialChartData: FinancialChartData;
 }) => {
+  const { amountFormatter } = useAmountFormatter();
   const chartData = Object.entries(financialChartData.financeByPeriod).map(
     ([key, value]) => ({
       name: key,
@@ -209,14 +213,14 @@ const FinancialLineChart = ({
           tickMargin={10}
         />
         <YAxis
-          tickFormatter={(value) => `$${value}`}
+          tickFormatter={(value) => amountFormatter(value)}
           tickLine={false}
           axisLine={false}
           tickMargin={10}
         />
         <Tooltip
           labelFormatter={(label) => `Period: ${label}`}
-          formatter={(value, name) => [`${name}: $${Number(value).toFixed(2)}`]}
+          formatter={(value, name) => [`${name}: ${amountFormatter(+value)}`]}
           contentStyle={{
             borderRadius: "12px",
             padding: "10px",
@@ -251,6 +255,7 @@ const FinancialPieChart = ({
 }: {
   financialChartData: FinancialChartData;
 }) => {
+  const { amountFormatter } = useAmountFormatter();
   const chartData = [
     {
       name: "Income",
@@ -290,7 +295,7 @@ const FinancialPieChart = ({
           ))}
         </Pie>
         <Tooltip
-          formatter={(value) => [`$${Number(value).toFixed(2)}`]}
+          formatter={(value) => [amountFormatter(+value)]}
           contentStyle={{
             borderRadius: "12px",
             padding: "10px",
