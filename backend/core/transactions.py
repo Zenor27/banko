@@ -1,10 +1,13 @@
 from collections.abc import Iterable
+import csv
 from dataclasses import dataclass
-import pandas as pd
 from datetime import date, datetime
-from typing import Literal
+from typing import Any, Literal
 
-from data.transactions import Transaction, get_transactions
+from data.models.file_import import FileImport
+from data.db import get_session
+from data.models.transaction import Transaction
+from sqlmodel import desc, select, func, case
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -17,97 +20,168 @@ class Finance:
         return self.income - self.expense
 
 
+type GroupBy = Literal["day", "week", "month", "year", "total"]
+
+
 def get_finance_by_period(
     *,
     start_date: date,
     end_date: date,
-    group_by: Literal["day", "week", "month", "year", "total"],
+    group_by: GroupBy,
 ) -> dict[str, Finance]:
-    transactions = get_transactions()
-    start_date_time, end_date_time = (
-        datetime.combine(start_date, datetime.min.time()),
-        datetime.combine(end_date, datetime.max.time()),
-    )
-
-    df = pd.DataFrame(transactions)
-    df["at"] = pd.to_datetime(df["at"])
-    df = df[(df["at"] >= start_date_time) & (df["at"] <= end_date_time)]
-
     match group_by:
         case "day":
-            df["period"] = df["at"].dt.date
+            sql_group_by = func.strftime("%Y-%m-%d", Transaction.at)
         case "week":
-            df["period"] = df["at"].dt.strftime("%Y-W%U")
+            sql_group_by = func.strftime("%Y-W%W", Transaction.at)
         case "month":
-            df["period"] = df["at"].dt.strftime("%Y-M%m")
+            sql_group_by = func.strftime("%Y-M%m", Transaction.at)
         case "year":
-            df["period"] = df["at"].dt.strftime("%Y")
+            sql_group_by = func.strftime("%Y", Transaction.at)
         case "total":
-            df["period"] = "total"
+            sql_group_by = func.strftime("total", Transaction.at)
 
-    df = df.groupby("period").agg(
-        income=("amount", lambda x: x[df["amount"] > 0].sum()),
-        expense=("amount", lambda x: x[df["amount"] < 0].sum()),
+    stmt = (
+        select(
+            sql_group_by.label("period"),
+            func.sum(case((Transaction.amount > 0, Transaction.amount), else_=0)).label(
+                "income"
+            ),
+            func.abs(
+                func.sum(case((Transaction.amount < 0, Transaction.amount), else_=0))
+            ).label("expense"),
+        )
+        .where((Transaction.at >= start_date) & (Transaction.at <= end_date))
+        .group_by(sql_group_by)
     )
 
     finance_by_period = dict[str, Finance]()
-    for period, row in df.iterrows():
-        finance_by_period[str(period)] = Finance(
-            income=abs(row["income"]),
-            expense=abs(row["expense"]),
-        )
+    with get_session() as session:
+        for period, income, expense in session.exec(stmt):
+            finance_by_period[str(period)] = Finance(
+                income=float(income), expense=float(expense)
+            )
     return finance_by_period
 
 
 def get_finance(*, start_date: date, end_date: date) -> Finance:
-    transactions = get_transactions()
-    start_date_time, end_date_time = (
-        datetime.combine(start_date, datetime.min.time()),
-        datetime.combine(end_date, datetime.max.time()),
-    )
+    with get_session() as session:
+        stmt = select(
+            func.sum(case((Transaction.amount > 0, Transaction.amount), else_=0)).label(
+                "income"
+            ),
+            func.abs(
+                func.sum(case((Transaction.amount < 0, Transaction.amount), else_=0))
+            ).label("expense"),
+        ).where((Transaction.at >= start_date) & (Transaction.at <= end_date))
+        maybe_result = session.exec(stmt).one_or_none()
+        if maybe_result is None:
+            return Finance(income=0.0, expense=0.0)
 
-    df = pd.DataFrame(transactions)
-    df["at"] = pd.to_datetime(df["at"])
-    df = df[(df["at"] >= start_date_time) & (df["at"] <= end_date_time)]
-
-    income = abs(df[df["amount"] > 0]["amount"].sum())
-    expense = abs(df[df["amount"] < 0]["amount"].sum())
-
-    return Finance(income=income, expense=expense)
+        income, expense = maybe_result
+        return Finance(
+            income=float(income or 0.0),
+            expense=float(expense or 0.0),
+        )
 
 
 def get_finance_by_category(*, start_date: date, end_date: date) -> dict[str, Finance]:
-    transactions = get_transactions()
-    start_date_time, end_date_time = (
-        datetime.combine(start_date, datetime.min.time()),
-        datetime.combine(end_date, datetime.max.time()),
-    )
-
-    df = pd.DataFrame(transactions)
-    df["at"] = pd.to_datetime(df["at"])
-    df = df[(df["at"] >= start_date_time) & (df["at"] <= end_date_time)]
-    df["category"] = df["category"].str.lower()
-
-    df = df.groupby("category").agg(
-        income=("amount", lambda x: x[df["amount"] > 0].sum()),
-        expense=("amount", lambda x: x[df["amount"] < 0].sum()),
-    )
-    finance_by_category = dict[str, Finance]()
-    for category, row in df.iterrows():
-        finance_by_category[str(category)] = Finance(
-            income=abs(row["income"]),
-            expense=abs(row["expense"]),
+    with get_session() as session:
+        stmt = (
+            select(
+                Transaction.category,
+                func.sum(
+                    case((Transaction.amount > 0, Transaction.amount), else_=0)
+                ).label("income"),
+                func.abs(
+                    func.sum(
+                        case((Transaction.amount < 0, Transaction.amount), else_=0)
+                    )
+                ).label("expense"),
+            )
+            .where((Transaction.at >= start_date) & (Transaction.at <= end_date))
+            .group_by(Transaction.category)
         )
-
+        finance_by_category = dict[str, Finance]()
+        for category, income, expense in session.exec(stmt):
+            finance_by_category[category] = Finance(
+                income=float(income), expense=float(expense)
+            )
     return finance_by_category
 
 
-def get_filtered_transactions(
-    *, start_date: date, end_date: date
-) -> Iterable[Transaction]:
-    transactions = get_transactions()
-    yield from (
-        t
-        for t in sorted(transactions, key=lambda t: t.at, reverse=True)
-        if start_date <= t.at <= end_date
+def get_transactions(*, start_date: date, end_date: date) -> Iterable[Transaction]:
+    with get_session() as session:
+        stmt = (
+            select(Transaction)
+            .where((Transaction.at >= start_date) & (Transaction.at <= end_date))
+            .order_by(desc(Transaction.at))
+        )
+        transactions = session.exec(stmt).all()
+    return transactions
+
+
+def import_from_csv(
+    csv_file: bytes, *, header_mapping: dict[str, list[str]], file_name: str
+) -> int:
+    decoded = csv_file.decode("ISO-8859-1")
+    if len(decoded) == 0:
+        # TODO: business logic error
+        raise ValueError("Empty CSV file")
+
+    [headers, *rows] = decoded.splitlines()
+
+    dialect = csv.Sniffer().sniff(headers)
+
+    csv_reader = csv.DictReader(
+        rows, fieldnames=headers.split(dialect.delimiter), delimiter=dialect.delimiter
     )
+
+    def _get_header_value(row: dict[str, Any], key: str) -> Any:
+        headers = header_mapping.get(key, [])
+        for header in headers:
+            value = row.get(header)
+            if not value:
+                continue
+            return value
+
+        raise ValueError(f"No value found for key: {key} within headers: {headers}")
+
+    imported = 0
+    with get_session() as session:
+        for row in csv_reader:
+            at = datetime.strptime(_get_header_value(row, "at"), "%d/%m/%Y").date()
+            name = _get_header_value(row, "name")
+            category = _get_header_value(row, "category")
+            amount = float(_get_header_value(row, "amount").replace(",", ".") or 0.0)
+
+            transaction = session.exec(
+                select(Transaction).where(
+                    (Transaction.at == at)
+                    & (Transaction.name == name)
+                    & (Transaction.category == category)
+                    & (Transaction.amount == amount)
+                )
+            ).one_or_none()
+            if transaction is not None:
+                continue
+
+            transaction = Transaction(
+                at=at,
+                name=name,
+                category=category,
+                amount=amount,
+            )
+            session.add(transaction)
+            imported += 1
+
+        session.add(
+            FileImport(
+                at=date.today(),
+                imported=imported,
+                file_name=file_name,
+            )
+        )
+        session.commit()
+
+    return imported

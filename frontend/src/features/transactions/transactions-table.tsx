@@ -1,4 +1,5 @@
 import { DataTable } from "@/components/data-table";
+import { DataTableSkeleton } from "@/components/data-table-skeleton";
 import {
   useTransactions,
   useTransactionsTable,
@@ -14,7 +15,7 @@ export const TransactionsTable = ({
   const columns = useTransactionsTable();
 
   if (isLoading || !transactions) {
-    return "Loading...";
+    return <DataTableSkeleton />;
   }
 
   return <DataTable columns={columns} data={transactions} />;

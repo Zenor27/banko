@@ -1,23 +1,36 @@
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
+from sqlmodel import select
+from contextlib import asynccontextmanager
+import csv
 from datetime import date
-from typing import Literal
+import json
+from typing import Annotated, Literal
 from fastapi.middleware.cors import CORSMiddleware
 
-from fastapi import FastAPI
+from fastapi import FastAPI, File, Form
 from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 
-from data.transactions import Transaction
+from data.models.file_import import FileImport
+from data.db import create_db_and_tables, get_session
+from data.models.transaction import Transaction
 from core.transactions import (
     Finance,
     get_finance,
     get_finance_by_category,
     get_finance_by_period,
-    get_filtered_transactions,
+    get_transactions,
+    import_from_csv,
 )
 
 
-app = FastAPI()
+@asynccontextmanager
+async def init_database_lifespan(_app: FastAPI):
+    create_db_and_tables()
+    yield
+
+
+app = FastAPI(lifespan=init_database_lifespan)
 
 ORIGINS = ["http://localhost:3000"]
 
@@ -28,7 +41,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 BaseConfig = ConfigDict(alias_generator=to_camel, extra="forbid", populate_by_name=True)
 
 
@@ -203,8 +215,8 @@ class GetTransactionsResponse(BaseAPIModel):
 
 
 @app.post("/transactions")
-async def get_transactions(request: GetTransactionsRequest) -> GetTransactionsResponse:
-    transactions = get_filtered_transactions(
+async def transactions(request: GetTransactionsRequest) -> GetTransactionsResponse:
+    transactions = get_transactions(
         start_date=request.start_date, end_date=request.end_date
     )
     return GetTransactionsResponse.from_data(transactions)
@@ -221,3 +233,71 @@ async def get_currency() -> GetCurrencyResponse:
     return GetCurrencyResponse(
         currency_label="euro", currency_symbol="€", currency_code="EUR"
     )
+
+
+class ImportInfoResponse(BaseAPIModel):
+    headers: list[str]
+
+    first_values_by_header: dict[str, list[str]]
+
+
+@app.post("/import/info")
+async def get_import_info(file: Annotated[bytes, File()]) -> ImportInfoResponse:
+    decoded = file.decode("ISO-8859-1")
+    if len(decoded) < 1:
+        raise ValueError("File is empty")
+
+    [header_row, *rows] = decoded.splitlines()
+    dialect = csv.Sniffer().sniff(header_row)
+    headers = header_row.split(dialect.delimiter)
+    first_values_by_header = {
+        header: [row.split(dialect.delimiter)[i] for row in rows[:5]]
+        for i, header in enumerate(headers)
+    }
+
+    return ImportInfoResponse(
+        headers=headers, first_values_by_header=first_values_by_header
+    )
+
+
+class ImportTransactionsResponse(BaseAPIModel):
+    imported: int
+
+
+@app.post("/import/transactions")
+async def import_transactions(
+    file: Annotated[bytes, File()], form_mapping: Annotated[str, Form()], file_name: str
+) -> ImportTransactionsResponse:
+    headers_mapping = dict[str, list[str]](json.loads(form_mapping))
+    return ImportTransactionsResponse(
+        imported=import_from_csv(
+            file, header_mapping=headers_mapping, file_name=file_name
+        )
+    )
+
+
+class ImportHistoryResponse(BaseAPIModel):
+    at: date
+    file_name: str
+    imported: int
+
+    @classmethod
+    def from_file_import(
+        cls, file_import: Sequence[FileImport]
+    ) -> list["ImportHistoryResponse"]:
+        return [
+            cls(
+                at=file_import.at,
+                file_name=file_import.file_name,
+                imported=file_import.imported,
+            )
+            for file_import in file_import
+        ]
+
+
+@app.get("/import/history")
+async def import_history() -> list[ImportHistoryResponse]:
+    with get_session() as session:
+        return ImportHistoryResponse.from_file_import(
+            file_import=session.exec(select(FileImport)).all()
+        )

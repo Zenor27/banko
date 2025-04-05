@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BarChart3, ListFilter } from "lucide-react";
+import { BarChart3, ListFilter, UploadIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -16,6 +16,11 @@ const ITEMS = [
     label: "Transactions",
     icon: ListFilter,
     href: "/transactions",
+  },
+  {
+    label: "Imports",
+    icon: UploadIcon,
+    href: "/imports",
   },
 ] as const;
 

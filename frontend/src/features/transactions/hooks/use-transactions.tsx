@@ -1,4 +1,4 @@
-import { getTransactionsTransactionsPost } from "@/client";
+import { transactionsTransactionsPost } from "@/client";
 import { createColumnHelper } from "@tanstack/react-table";
 import { cn, toISODate, ValidDateRange } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
@@ -13,7 +13,7 @@ export const useTransactions = ({ dateRange }: UseTransactionsProps) => {
   const { isLoading, data: transactions } = useQuery({
     queryKey: ["transactions", dateRange],
     queryFn: async () =>
-      await getTransactionsTransactionsPost({
+      await transactionsTransactionsPost({
         body: {
           startDate: toISODate(dateRange.from),
           endDate: toISODate(dateRange.to),

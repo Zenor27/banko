@@ -11,7 +11,9 @@ export const Summary = ({ dateRange }: { dateRange: ValidDateRange }) => {
     dateRange,
   });
   const balancePercent = financialSummaryData
-    ? (financialSummaryData.balance / financialSummaryData.income) * 100
+    ? financialSummaryData.income !== 0
+      ? (financialSummaryData.balance / financialSummaryData.income) * 100
+      : 100
     : 0;
 
   return (
@@ -78,7 +80,7 @@ export const Summary = ({ dateRange }: { dateRange: ValidDateRange }) => {
               </div>
               <p className="text-xs text-muted-foreground">
                 {financialSummaryData.balance >= 0 ? "Surplus" : "Deficit"} of{" "}
-                {isNaN(balancePercent) ? 0 : balancePercent.toFixed(2)}%
+                {balancePercent.toFixed(2)}%
               </p>
             </>
           )}
