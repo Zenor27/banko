@@ -235,6 +235,7 @@ class GetCurrencyResponse(BaseAPIModel):
 
 @app.get("/currency")
 async def get_currency() -> GetCurrencyResponse:
+    # TODO: make this configurable
     return GetCurrencyResponse(
         currency_label="euro", currency_symbol="€", currency_code="EUR"
     )
