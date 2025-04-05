@@ -39,7 +39,7 @@ def get_finance_by_period(
         case "year":
             sql_group_by = func.strftime("%Y", Transaction.at)
         case "total":
-            sql_group_by = func.strftime("total", Transaction.at)
+            sql_group_by = func.strftime("Total", Transaction.at)
 
     stmt = (
         select(
@@ -147,7 +147,7 @@ def import_from_csv(
 
         raise ValueError(f"No value found for key: {key} within headers: {headers}")
 
-    imported = 0
+    transactions_to_create = list[Transaction]()
     with get_session() as session:
         for row in csv_reader:
             at = datetime.strptime(_get_header_value(row, "at"), "%d/%m/%Y").date()
@@ -156,32 +156,33 @@ def import_from_csv(
             amount = float(_get_header_value(row, "amount").replace(",", ".") or 0.0)
 
             transaction = session.exec(
-                select(Transaction).where(
+                select(func.count("*")).where(
                     (Transaction.at == at)
                     & (Transaction.name == name)
                     & (Transaction.category == category)
                     & (Transaction.amount == amount)
                 )
-            ).one_or_none()
-            if transaction is not None:
+            ).one()
+            if transaction != 0:
                 continue
 
-            transaction = Transaction(
-                at=at,
-                name=name,
-                category=category,
-                amount=amount,
+            transactions_to_create.append(
+                Transaction(
+                    at=at,
+                    name=name,
+                    category=category,
+                    amount=amount,
+                )
             )
-            session.add(transaction)
-            imported += 1
 
+        session.add_all(transactions_to_create)
         session.add(
             FileImport(
                 at=date.today(),
-                imported=imported,
+                imported=len(transactions_to_create),
                 file_name=file_name,
             )
         )
         session.commit()
 
-    return imported
+    return len(transactions_to_create)

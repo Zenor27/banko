@@ -1,4 +1,5 @@
 from collections.abc import Iterable, Sequence
+import logging
 from sqlmodel import select
 from contextlib import asynccontextmanager
 import csv
@@ -23,10 +24,14 @@ from core.transactions import (
     import_from_csv,
 )
 
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def init_database_lifespan(_app: FastAPI):
+    logger.info("Creating database and tables...")
     create_db_and_tables()
+    logger.info("Database and tables created.")
     yield
 
 
