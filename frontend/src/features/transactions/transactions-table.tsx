@@ -8,8 +8,10 @@ import { ValidDateRange } from "@/lib/utils";
 
 export const TransactionsTable = ({
   dateRange,
+  search,
 }: {
   dateRange: ValidDateRange;
+  search: string;
 }) => {
   const { isLoading, transactions } = useTransactions({ dateRange });
   const columns = useTransactionsTable();
@@ -18,5 +20,5 @@ export const TransactionsTable = ({
     return <DataTableSkeleton />;
   }
 
-  return <DataTable columns={columns} data={transactions} />;
+  return <DataTable columns={columns} data={transactions} filter={search} />;
 };

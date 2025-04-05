@@ -43,6 +43,7 @@ export const useTransactionsTable = () => {
     }),
     columnHelper.accessor("name", {
       header: "Name",
+      filterFn: "fuzzy",
     }),
     columnHelper.accessor("amount", {
       header: "Amount",

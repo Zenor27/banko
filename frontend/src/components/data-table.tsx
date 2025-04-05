@@ -1,9 +1,13 @@
 "use client";
 
+import { RankingInfo, rankItem } from "@tanstack/match-sorter-utils";
+
 import {
   ColumnDef,
+  FilterFn,
   flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
   useReactTable,
 } from "@tanstack/react-table";
 
@@ -20,13 +24,45 @@ interface DataTableProps<TData> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   columns: ColumnDef<TData, any>[];
   data: TData[];
+  filter?: string;
 }
 
-export function DataTable<TData>({ columns, data }: DataTableProps<TData>) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
+  const itemRank = rankItem(row.getValue(columnId), value);
+  addMeta({
+    itemRank,
+  });
+  return itemRank.passed;
+};
+
+declare module "@tanstack/react-table" {
+  //add fuzzy filter to the filterFns
+  interface FilterFns {
+    fuzzy: FilterFn<unknown>;
+  }
+  interface FilterMeta {
+    itemRank: RankingInfo;
+  }
+}
+
+export function DataTable<TData>({
+  columns,
+  data,
+  filter,
+}: DataTableProps<TData>) {
   const table = useReactTable({
     data,
     columns,
+    state: {
+      globalFilter: filter,
+    },
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    globalFilterFn: "fuzzy",
+    filterFns: {
+      fuzzy: fuzzyFilter,
+    },
   });
 
   return (
