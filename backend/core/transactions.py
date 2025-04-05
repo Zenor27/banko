@@ -126,7 +126,7 @@ def import_from_csv(
 ) -> int:
     decoded = csv_file.decode("ISO-8859-1")
     if len(decoded) == 0:
-        # TODO: business logic error
+        # TODO: raise custom exception
         raise ValueError("Empty CSV file")
 
     [headers, *rows] = decoded.splitlines()
@@ -155,6 +155,7 @@ def import_from_csv(
             category = _get_header_value(row, "category")
             amount = float(_get_header_value(row, "amount").replace(",", ".") or 0.0)
 
+            # TODO: this is not optimized at all...
             transaction = session.exec(
                 select(func.count("*")).where(
                     (Transaction.at == at)

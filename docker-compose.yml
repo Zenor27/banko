@@ -1,0 +1,21 @@
+volumes:
+  db_data:
+
+services:
+  backend:
+    build:
+      context: backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - db_data:/app/data/db
+
+  frontend:
+    build:
+      context: frontend
+      dockerfile: Dockerfile
+    environment:
+      - BACKEND_API_URL=http://backend:8000
+    ports:
+      - "3000:3000"

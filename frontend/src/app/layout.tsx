@@ -4,6 +4,7 @@ import "./globals.css";
 import { Shell } from "@/components/shell";
 import { Providers } from "@/app/providers";
 import { getCurrencyCurrencyGet } from "@/client";
+import { heyApiServerClient } from "@/lib/hey-api";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -20,12 +21,15 @@ export const metadata: Metadata = {
   description: "Personal finance management made easy",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const currency = await getCurrencyCurrencyGet();
+  console.log(heyApiServerClient.getConfig().baseUrl);
+  const currency = await getCurrencyCurrencyGet({ client: heyApiServerClient });
   // TODO: global nextjs error handling
   if (!currency.data) {
     throw new Error("Failed to fetch currency data");
