@@ -28,8 +28,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  console.log(heyApiServerClient.getConfig().baseUrl);
   const currency = await getCurrencyCurrencyGet({ client: heyApiServerClient });
+
   // TODO: global nextjs error handling
   if (!currency.data) {
     throw new Error("Failed to fetch currency data");
